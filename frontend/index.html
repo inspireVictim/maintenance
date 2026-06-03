@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MaintOps — Учёт заявок на ТО</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="app">
+        <aside class="sidebar">
+            <div class="sidebar__brand">
+                <div class="sidebar__logo">M</div>
+                <div>
+                    <div class="sidebar__title">MaintOps</div>
+                    <div class="sidebar__sub">Maintenance Tracker</div>
+                </div>
+            </div>
+
+            <nav class="sidebar__nav">
+                <button class="nav-item is-active" data-view="dashboard">
+                    <span class="nav-item__icon">📊</span> Dashboard
+                </button>
+                <button class="nav-item" data-view="board">
+                    <span class="nav-item__icon">🗂</span> Канбан-доска
+                </button>
+                <button class="nav-item" data-view="requests">
+                    <span class="nav-item__icon">📋</span> Журнал заявок
+                </button>
+                <button class="nav-item" data-view="equipment">
+                    <span class="nav-item__icon">⚙️</span> Оборудование
+                </button>
+                <button class="nav-item" data-view="parts">
+                    <span class="nav-item__icon">🔩</span> Склад запчастей
+                </button>
+            </nav>
+
+            <div class="sidebar__footer">
+                <div class="user-card">
+                    <div class="user-card__avatar">ПД</div>
+                    <div>
+                        <div class="user-card__name">Петрова А. С.</div>
+                        <div class="user-card__role">Диспетчер</div>
+                    </div>
+                </div>
+                <div class="sidebar__date" id="today-label">—</div>
+            </div>
+        </aside>
+
+        <main class="content">
+            <header class="content__header">
+                <h1 id="view-title">Dashboard</h1>
+                <div class="content__actions" id="content-actions"></div>
+            </header>
+
+            <!-- DASHBOARD -->
+            <section class="view" id="view-dashboard">
+                <div class="kpi-grid">
+                    <div class="kpi" style="--c: #3B82F6">
+                        <div class="kpi__label">Открытых заявок</div>
+                        <div class="kpi__value" id="kpi-open">—</div>
+                    </div>
+                    <div class="kpi" style="--c: #EF4444">
+                        <div class="kpi__label">Критических</div>
+                        <div class="kpi__value" id="kpi-critical">—</div>
+                    </div>
+                    <div class="kpi" style="--c: #F59E0B">
+                        <div class="kpi__label">В работе</div>
+                        <div class="kpi__value" id="kpi-work">—</div>
+                    </div>
+                    <div class="kpi" style="--c: #10B981">
+                        <div class="kpi__label">Закрыто сегодня</div>
+                        <div class="kpi__value" id="kpi-done">—</div>
+                    </div>
+                </div>
+
+                <h2 class="block-title">⚠️ Критические неисправности</h2>
+                <div class="critical-grid" id="critical-grid"></div>
+
+                <h2 class="block-title">📦 Запчасти ниже минимума</h2>
+                <div class="parts-low" id="parts-low"></div>
+            </section>
+
+            <!-- KANBAN BOARD -->
+            <section class="view" id="view-board" hidden>
+                <div class="board" id="board"></div>
+            </section>
+
+            <!-- REQUESTS TABLE -->
+            <section class="view" id="view-requests" hidden>
+                <div class="filter-row">
+                    <label>Приоритет:
+                        <select id="filter-priority"><option value="">Все</option></select>
+                    </label>
+                    <label>Статус:
+                        <select id="filter-status"><option value="">Все</option></select>
+                    </label>
+                    <label>Исполнитель:
+                        <select id="filter-assignee"><option value="">Все</option></select>
+                    </label>
+                    <label style="margin-left:auto;display:flex;align-items:center;gap:6px">
+                        <input type="checkbox" id="filter-open-only"> Только открытые
+                    </label>
+                </div>
+
+                <div class="data-table-wrap">
+                    <table class="data-table data-table--rich">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Заявка</th>
+                                <th>Оборудование</th>
+                                <th>Приоритет</th>
+                                <th>Статус</th>
+                                <th>Исполнитель</th>
+                                <th>Создана</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="requests-tbody"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- EQUIPMENT -->
+            <section class="view" id="view-equipment" hidden>
+                <div class="equipment-grid" id="equipment-grid"></div>
+            </section>
+
+            <!-- PARTS -->
+            <section class="view" id="view-parts" hidden>
+                <div class="data-table-wrap">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Артикул</th>
+                                <th>Наименование</th>
+                                <th>Ед.</th>
+                                <th>Цена</th>
+                                <th>Остаток</th>
+                                <th>Мин.</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="parts-tbody"></tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- MODAL -->
+    <div id="modal-overlay" class="modal-overlay" hidden>
+        <div class="modal" id="modal">
+            <header class="modal__header">
+                <h2 id="modal-title">—</h2>
+                <button class="modal__close" id="modal-close">×</button>
+            </header>
+            <div class="modal__body" id="modal-body"></div>
+        </div>
+    </div>
+
+    <div id="toast-stack" class="toast-stack"></div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
